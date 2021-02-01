@@ -95,7 +95,7 @@ const CardInfo2 = ({next_class}) => {
   )
 }
 
-
+ 
 const Notification = ({navigation, bid}) => {
   const user = React.useContext(UserContext);
   const [lastNotif, setLastNotif] = React.useState(user.lastNotif);
@@ -187,7 +187,9 @@ const Notification = ({navigation, bid}) => {
                   title: post.title, 
                   text:post.text, 
                   UserId: post.UserId,
-                  Comment: post.Comment
+                  Comment: post.Comment,
+                  createdAt : post.createdAt,
+                  fromhome: true
                 })}}>
                 <Text style={{ color: "#787878" }}>{post.title}</Text>
               </TouchableOpacity>
@@ -275,7 +277,7 @@ function Main({navigation}){
       }
     }
     console.log(now)
-    console.log(class_list[current_class]);
+    console.log(class_list[current_class]); 
     console.log(class_list[next_class]);
     return(
       <ScrollView style={{flex:1}}>

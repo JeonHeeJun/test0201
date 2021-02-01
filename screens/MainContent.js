@@ -50,6 +50,12 @@ export function useForceUpdate() {
   return update;
 }
 
+function printoutkey(){
+  console.log("------------------printout--------------------")
+  for(var i =0 ; i<Datalist.Array.length ; i++)
+    console.log(Datalist.Array[i].id);
+}
+
 const check = (id) =>{//삭제버튼 띄우는 조건
   //console.log("check!!!!!!!!", id, Uid) 
   if(Uid.id == id || (Bid in normalBoard && Uid.grade == 0 ) ) return true;
@@ -57,14 +63,13 @@ const check = (id) =>{//삭제버튼 띄우는 조건
 }
 
 const UploadPostButton = ({navigation})=>{ //업로드버튼
-  return (<View style={{borderWidth:1,position:'absolute',bottom:10,alignSelf:'center'}}>
+  return (
   <Button
     title="글쓰기"
     accessibilityLabel="글쓰기"
     onPress={()=>{navigation.navigate("Upload")}}
     /> 
-</View> );
-} 
+);} 
 
 const CustomMenu = (props) => { //메뉴 버튼
   //console.log("메뉴",props.route);
@@ -116,12 +121,13 @@ const CustomMenu = (props) => { //메뉴 버튼
 };
 
 
-const Test = React.memo(function Change({post,navigation}){
+const Test = React.memo(({post,navigation})=>{
   //console.log("jhhuhuih",post.item.id);
   return(
+    post.item.delete ? (null) : 
     <TouchableOpacity  
     style={styles.line}
-    onPress= {()=>{navigation.navigate("Post",{...post.item, num:post.index})}}
+    onPress= {()=>{navigation.navigate("Post",{...post.item, num:post.index,fromhome: false})}}
      >
     <Text style={{fontSize : 30}}>{post.item.title}</Text>
     <Text style={{fontSize : 13}}>{post.item.text}</Text>
@@ -136,11 +142,12 @@ const Test = React.memo(function Change({post,navigation}){
 
 
 function GetAllPost({route,navigation}){
- // console.log("GetAllPost진입@@@@@@@@@@@@@@")
+  console.log("GetAllPost진입@@@@@@@@@@@@@@")
   //var scroll = 0; 
   //if(!route.params.needquery) scroll = Datalist.scroll;
   //const scrollViewRef= React.useRef()
   //console.log("@@@@@@@@@@@",Datalist.Array);
+  console.log(data)
   const [ 
     fetch, 
     { loading, data }
@@ -152,11 +159,12 @@ function GetAllPost({route,navigation}){
     //console.log("@@@@@fetchnew!!!!!!")
     for(var i=0; i<data.loadPost.length; i++)
       Datalist.Array.push(data.loadPost[i]);
+      snum+=tnum ;
     //console.log(Datalist.Array.length)
   }
 
   return(  
-    <View style={{flex:1}}>
+    <View style={{flex:1}}> 
       <FlatList
       keyExtractor={(post) => post.id.toString()}
       data = {Datalist.Array} 
@@ -167,16 +175,15 @@ function GetAllPost({route,navigation}){
         );
           }}
       windowSize = {2}
-
+ 
       onEndReached={()=>{//console.log("끝!!"); 
-            snum+=tnum ;
 
             if(data == undefined) fetch()
             else{
               if(data.loadPost.length != 0 ) fetch();
             }
             }}
-
+ 
       onEndReachedThreshold={0.1}
       ListFooterComponent={
         data == undefined?
@@ -184,27 +191,22 @@ function GetAllPost({route,navigation}){
       :
       data.loadPost.length == 0? 
         <Text>더 이상 불러올 글이 없습니다.</Text> :<Text>로딩중....</Text> 
+      
     }
+    bounces ={false}
       />
       <View style={{borderWidth:1,position:'absolute',bottom:10,alignSelf:'center'}}>
-  <Button
-    title="글쓰기"
-    accessibilityLabel="글쓰기"
-    onPress={()=>{navigation.navigate("Upload")}}
-    /> 
-</View>
+      {Bid in alaramBoard ?
+      Uid.grade == 0 ? <UploadPostButton navigation={navigation}/> : (null)
+      : 
+      <UploadPostButton navigation={navigation}/>
+    }
+      </View>
       </View>
   );
   
 }
 
-const SetUpdateGetPost0 = ({start, navigation}) =>{
- // console.log("setupdate",start)
-  postupdate = false
-
-  return (<GetPost snum = {start} navigation={navigation} /> );
-
-}
 
 
 const IinitialPost =({navigation})=>{
@@ -225,60 +227,6 @@ const IinitialPost =({navigation})=>{
   );
 
 }
-
-const GetPost=({snum,navigation,child=false})=>{
-  const forceupdate = useForceUpdate();
-   //  console.log("getpost진입",snum)
-
-    const {loading, error, data} = useQuery(POST_LOAD,{
-        variables: {bid: Bid, snum: snum, tnum: tnum}
-    });
- //
-    if(loading) return (<Text>로딩..</Text>);
-    if(error) return(<Text>에러!!{error}</Text>);
-    //console.log("eos::::",EOS);
-    var arr = []
-    for(var i=0; i < data.loadPost.length ; i++){
-      arr.push([i+snum,data.loadPost[i]])
-    }
-  //  //console.log(arr);
-    //console.log("GetpostDatalist@@@@@@@",Datalist);
-  
-    if(!postupdate){
-  for(var i=0; i<data.loadPost.length; i++)
-      Datalist.Array.push(arr[i])
-    }
-     
-     //console.log("@@@@@@@",Datalist);
-    return( 
-    <View style ={{flex:1}}>
-        { 
-       arr.map(post =>
-          <TouchableOpacity 
-            style={styles.line}
-            onPress= {()=>{navigation.navigate("Post",{...post[1], num : post[0]})}}
-             key={post[1].id}>
-            <Text style={{fontSize : 30}}>{post[1].title}</Text>
-            <HyperlinkedText style={{fontSize : 13}}>{post[1].text}</HyperlinkedText>
-            <Text style={{fontSize: 10}}>댓글수: {post[1].Comment.length}</Text>
-            <Text style={{fontSize: 10}}>시간: {post[1].createdAt}</Text>
-        </TouchableOpacity>
-        ) 
-         }{postupdate?
-          (<SetUpdateGetPost0 start={snum + tnum}  navigation = {navigation}/>) :
-          (
-           data.loadPost.length < tnum ? (<Text>더 이상 불러올 글이 없습니다</Text>) : 
-           
-           (<Button title ="더보기" onPress ={()=>{postupdate = true; forceupdate()}}/>)
-           )
-        }
-    </View>
-      );
-
-      //버튼 크기 up필요.가운데로 옮기기
-}   
-
-
 
  
 export function Community({route, navigation}){
@@ -358,31 +306,38 @@ export function Post({route,navigation}){
   );
    
   }
-   
+    
  
 const SetHeader = ({route,navigation,deletePost})=>{ //새로고침,삭제 헤더버튼 추가.
- // console.log("hedear----------------------",route);
+  console.log("hedear----------------------",route);
   React.useLayoutEffect(() => {
     navigation.setOptions({
 
       headerRight: () => {
-        
         return (
         <View style={{flexDirection:'row'}} >
           <Button title ="새로고침" onPress ={()=>{
+            printsnum = 0;
             navigation.setParams({upload:true})
             navigation.navigate("Post")}} />
           {check(route.userId) ?
-          (<Button title="삭제" onPress={()=>{Alert.alert(
+          (<Button title="삭제" onPress={()=>{
+            Alert.alert(
             "글을 삭제하시겠습니까?",
             "",
             [
               {
                 text: "예",
                 onPress: () => {
+                  printsnum = 0;
                   deletePost(route.id);
-                  Datalist.Array[route.num][1] = null;
-                  navigation.navigate("Community",{id:Bid,needquery:false})},
+
+                  if(route.fromhome) navigation.goBack();
+                  else{
+                    Datalist.Array[route.num] = {id:route.id, delete: true}; 
+                    navigation.navigate("Community",{id:Bid,needquery:false})}
+                
+                },
                 style: "cancel"
               },
               { text: "아니오", onPress: () => {return;} }
@@ -394,11 +349,14 @@ const SetHeader = ({route,navigation,deletePost})=>{ //새로고침,삭제 헤�
 
           (null)
           }
-          </View>)},
-
+          </View>)}, 
+ 
        headerLeft :()=>{//console.log("정신나갈거같에정시난갈거같에정신",route.upload)
-       return (route.upload == true) ? (<HeaderBackButton onPress={()=>{navigation.navigate("Community",{needquery: false})}}/>) 
-                    :(<HeaderBackButton onPress={()=>{navigation.goBack()}} />)
+  
+       if(route.fromhome) return (<HeaderBackButton onPress={()=>{printsnum = 0;navigation.goBack()}} />);
+       return (route.upload == true) ?
+            (<HeaderBackButton onPress={()=>{printsnum = 0;navigation.navigate("Community",{needquery: false})}}/>) 
+                    :(<HeaderBackButton onPress={()=>{printsnum = 0;navigation.goBack()}} />)
                   }
       
    } );
@@ -408,7 +366,7 @@ const SetHeader = ({route,navigation,deletePost})=>{ //새로고침,삭제 헤�
 
 
 function ViewPost({route,navigation}){//한 Post 다 출력
-  //console.log("----------viewpoint rotue-------------",route)
+  console.log("----------viewpoint rotue-------------",route)
   const cond = (route.params.upload == true) 
   const [deletePostMutation] = useMutation(POST_DELETE);
   const deletePost = async(pid) =>{
@@ -452,11 +410,13 @@ function ViewPost({route,navigation}){//한 Post 다 출력
   catch(e){
     console.log(e); 
     }
-}  
+}   
   
+
+
 if(!cond ){
 allContent = [{id:route.params.id, UserId: route.params.UserId, 
-              createdAt: route.params.createdAt, text:route.params.texst,
+              createdAt: route.params.createdAt, text:route.params.text,
               title:route.params.title, num:route.params.num,
               commentLen:route.params.Comment.length,
               __typename:"Post"}];
@@ -466,20 +426,18 @@ allComment = route.params.Comment;
   return(
   
   <View style ={{flex:1, paddingHorizontal:10}}>
-    <SetHeader route={{id: route.params.id , upload: route.params.upload, userId: route.params.UserId, num:route.params.num}}
+        <SetHeader route={{id: route.params.id , upload: route.params.upload, userId: route.params.UserId, num:route.params.num, fromhome: route.params.fromhome}}
        navigation={navigation} deletePost={deletePost}/>
-    
-    <View >
       {cond?
       <CommentReload route ={{id: route.params.id, userId: route.params.UserId, 
         text:route.params.text, title:route.params.title,
-        createdAt : route.params.createdAt, num: route.params.num
+        createdAt : route.params.createdAt, num: route.params.num, fromhome: route.params.fromhome
       }}
        deleteComment={deleteComment} navigation ={navigation}/>
       :
       <PrintAllContent deleteComment={deleteComment} navigation={navigation}/>
       } 
-    </View>
+
   
   <KeyboardAwareScrollView style={{borderWidth:1,position:'absolute',bottom:10 }}>
       <CommentInput  route={{id: route.params.id}} upload = {uploadComment} navigation ={navigation}/>
@@ -487,6 +445,8 @@ allComment = route.params.Comment;
   </View>);
 } 
      
+
+
 var printsnum = 0;
 const PrintAllContent = ({deleteComment,navigation}) =>{
  
@@ -495,10 +455,10 @@ const PrintAllContent = ({deleteComment,navigation}) =>{
   var end = false;
   var i = 0;
   for(;i<tnum ;i++){
-  if(allComment[printsnum+i] == undefined){end=true; printsnum=0; break;}
+  if(allComment[printsnum+i] == undefined){end=true; break;}
     allContent.push(allComment[i+printsnum]);
-  }
-   
+  } 
+  if(!end)printsnum+=i;
   //console.log("print!!!!!!!!!!!", allContent.length);
   return(
     <FlatList
@@ -515,7 +475,6 @@ const PrintAllContent = ({deleteComment,navigation}) =>{
       //console.log("끝!")
         if(!end){
         //console.log("nono")
-         printsnum+=i
          forceupdate(); 
         }}}
     onEndReachedThreshold={0.1}
@@ -525,14 +484,42 @@ const PrintAllContent = ({deleteComment,navigation}) =>{
 
 }
 
-const CommentReload = ({route,deleteComment, navigation}) =>{
- // console.log("Reloo가쟈!!!!route ", route)
+const Loading = ({navigation}) =>{
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+       headerLeft :()=>{ }
+   });
+     }, [navigation]);
+     return <Text>로딩......</Text>
+}
 
+const ForHeader = ({route,navigation}) =>{
+  console.log("Forheader---------------",route);
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      
+      headerLeft :()=>{//console.log("정신나갈거같에정시난갈거같에정신",route.upload)
+      if(route.fromhome) return (<HeaderBackButton onPress={()=>{printsnum = 0;navigation.goBack()}} />);
+      return (<HeaderBackButton onPress={()=>{printsnum = 0;navigation.navigate("Community",{needquery: false})}}/>)     
+                 }
+   });
+     }, [navigation,route]);
+  
+  return (null);
+}
+
+const CommentReload = ({route,deleteComment, navigation}) =>{
+  console.log("Reloo!!!--------------",route)
+  //여기서 버튼 hide하면 될듯.
   const{loading, error, data} = useQuery(POST_VIEW,{ //댓글 불러오는 쿼리
     variables: {pid: route.id}
-  })
-  if(loading) return (<Text>로딩..</Text>);
+  })  
+  if(loading){     
+ return (<Loading  navigation={navigation}/>);
+} 
   if(error) return(<Text>에러!!{error}</Text>);
+
+
   allComment = data.seeAllComment 
   allContent = [{id:route.id, UserId: route.userId, 
     createdAt: route.createdAt, text:route.text,
@@ -540,7 +527,7 @@ const CommentReload = ({route,deleteComment, navigation}) =>{
     commentLen:data.seeAllComment.length,
     __typename:"Post"}]; 
   //console.log("바뀐Comment정보!!!!!!!!", data)
-  if(data.seeAllComment.length != 0 ){
+  if(data.seeAllComment.length != 0 && route.fromhome != true){
   const temp = {UserId : route.userId, __typename:"Post", 
           createdAt: route.createdAt, id:route.id,
           text: route.text, title: route.title,
@@ -549,21 +536,23 @@ const CommentReload = ({route,deleteComment, navigation}) =>{
   Datalist.Array[route.num] = temp;
 
   }
-
-  for(var i =0; i<Datalist.Array.length ; i++){
-  //console.log("Datalist.array!!!!",Datalist.Array[i].id)
-  }
+   
+  /*for(var i =0; i<Datalist.Array.length ; i++){
+  console.log("Datalist.array!!!!",Datalist.Array[i].id)
+  }*/
   return(
-    
-    data.seeAllComment.length != 0?
+    <View>
+    <ForHeader route = {{fromhome : route.fromhome}} navigation={navigation}/>
+   { data.seeAllComment.length != 0?
       <PrintAllContent deleteComment={deleteComment} navigation={navigation}/>
     :
-    <SearchPost route ={route} navigation={navigation} deleteComment={deleteComment} />  
+    <SearchPost route ={route} navigation={navigation} deleteComment={deleteComment} /> }
     
+    </View>
     
   );
-}
-  
+} 
+   
 const SearchPost = ({route,navigation,deleteComment}) =>{
   //console.log("@@@@@@@@@searchpost진입")
   const{loading, error, data} = useQuery(POST_INFO,{ //댓글 불러오는 쿼리
@@ -573,16 +562,18 @@ const SearchPost = ({route,navigation,deleteComment}) =>{
   if(error) return(<Text>에러!!{error}</Text>);
  // console.log(data);
   if(data.seePost == null){
-    Datalist.Array[route.num] = null;
+    if(!route.fromhome) Datalist.Array[route.num] = {id:route.id, delete: true};
     Alert.alert("삭제된 게시물입니다.")
     return( null );
   }  
   else {
+    if(!route.fromhome){
     const temp = {UserId : route.userId, __typename:"Post", 
     createdAt: route.createdAt, id:route.id,
     text: route.text, title: route.title,
     Comment: []};
     Datalist.Array[route.num] = temp;
+    }
   }
 
   return(
@@ -605,6 +596,7 @@ const CommentInput=({route,upload,navigation})=>
       />
   <Button title="입력" onPress={()=>{
     //console.log("------------------------",route)
+    printsnum = 0;
     upload(route.id, text);
     navigation.navigate("Post",{upload : true})
 
@@ -613,7 +605,7 @@ const CommentInput=({route,upload,navigation})=>
 
 }
    
-
+ 
  
 const CommentContent = React.memo(({route,deleteComment,navigation}) => {
  // console.log("Commentfdsfdsfdsfqfqefqf!!!!!!");
@@ -625,6 +617,7 @@ const CommentContent = React.memo(({route,deleteComment,navigation}) => {
     { (check(route.item.UserId))?
     <Button title="삭제" onPress={()=>
     {
+      printsnum = 0;
       deleteComment(route.item.id);
       navigation.navigate("Post",{upload: true});
     }}/> : (null)
